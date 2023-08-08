@@ -23,6 +23,4 @@ public class ItemController {
     public ResponseEntity<?> addItem(@RequestBody ItemPostRequest request){
         return itemService.addItem(request);
     }
-
-
 }
