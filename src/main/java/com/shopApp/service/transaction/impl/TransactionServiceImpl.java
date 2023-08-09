@@ -16,6 +16,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 
+import java.util.Date;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -34,6 +35,8 @@ public class TransactionServiceImpl implements TransactionService {
         try {
             Transaction transaction = new Transaction();
             transaction.setPaymentStatus(EPaymentStatus.PENDING);
+            Date currentDate = new Date();
+            transaction.setExpiredAt( new Date(currentDate.getTime()  + 45 * 60000 ));
             transaction.setTotalAmount(request.getPrice());
             TransactionItemDetail transactionItemDetail = new TransactionItemDetail();
             transactionItemDetail.setTransaction(transaction);

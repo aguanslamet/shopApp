@@ -12,8 +12,8 @@ public interface TransactionItemDetailRepository extends JpaRepository<Transacti
     @Query("SELECT t FROM TransactionItemDetail t Where t.productId=:productId AND t.productStatus=:eProductStatus")
     TransactionItemDetail findByProductIdWhereStatusTroli(Long productId,EProductStatus eProductStatus);
 
-    @Query("SELECT t FROM TransactionItemDetail t Where t.productStatus=:eProductStatus")
-    List<TransactionItemDetail> findAllByidWhereTypetransaction(EProductStatus eProductStatus);
+    @Query("SELECT t FROM TransactionItemDetail t Where t.productStatus=:eProductStatus AND t.createdBy = :id")
+    List<TransactionItemDetail> findAllByidWhereTypetransaction(EProductStatus eProductStatus,Long id);
 
     @Query("SELECT t FROM TransactionItemDetail t Where t.id=:id AND t.productStatus=:eProductStatus")
     TransactionItemDetail findByIdWhereStatusTroli(Long id,EProductStatus eProductStatus);

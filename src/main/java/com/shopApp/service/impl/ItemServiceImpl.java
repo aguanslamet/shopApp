@@ -3,8 +3,11 @@ package com.shopApp.service.impl;
 import com.shopApp.dto.request.ItemPostRequest;
 import com.shopApp.dto.response.DefaultResponse;
 import com.shopApp.model.Items;
+import com.shopApp.model.Transaction;
 import com.shopApp.repository.ItemRepository;
+import com.shopApp.repository.TransactionRepository;
 import com.shopApp.service.ItemService;
+import com.shopApp.service.transaction.impl.EPaymentStatus;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -13,11 +16,16 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
+import java.util.Date;
+
 @Service
 public class ItemServiceImpl implements ItemService {
 
     @Autowired
     ItemRepository itemRepository;
+
+    @Autowired
+    TransactionRepository transactionRepository;
     @Override
     public ResponseEntity<?> addItem(ItemPostRequest request) {
         try {
@@ -63,5 +71,32 @@ public class ItemServiceImpl implements ItemService {
         } catch (Exception e){
             throw new IllegalArgumentException("error");
         }
+    }
+
+    @Override
+    public ResponseEntity<?> simulatorPay(Long transactionId) {
+        Transaction transaction = transactionRepository.getById(transactionId);
+        Date dt = new Date();
+        if (dt.compareTo(transaction.getExpiredAt())>0){
+            transaction.setPaymentStatus(EPaymentStatus.EXPIRED);
+            transactionRepository.save(transaction);
+            return new ResponseEntity<>(
+                    DefaultResponse.builder()
+                            .statusCode(200)
+                            .message("Waktu Tunggu Pembayaran sudah habis")
+                            .build(),
+                    HttpStatus.OK);
+        } else{
+            transaction.setPaymentStatus(EPaymentStatus.PAID);
+            transaction.setPaidAt(dt);
+            transactionRepository.save(transaction);
+        }
+
+        return new ResponseEntity<>(
+                DefaultResponse.builder()
+                        .statusCode(200)
+                        .message("Pembayaran Berhasil Dilakukan")
+                        .build(),
+                HttpStatus.OK);
     }
 }

@@ -12,12 +12,6 @@ public class ItemController {
 
     @Autowired
     ItemService itemService;
-    @GetMapping()
-    public ResponseEntity<?> getItem(@RequestParam(name ="page", defaultValue = "0") Integer page,
-                                     @RequestParam(name = "per-page",defaultValue = "10") Integer perPage,
-                                     @RequestParam(name = "keyword")String keyword){
-        return itemService.getItem(page,perPage,keyword);
-    }
 
     @PostMapping("/addAndEditItem")
     public ResponseEntity<?> addItem(@RequestBody ItemPostRequest request){

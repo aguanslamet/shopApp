@@ -1,11 +1,11 @@
 package com.shopApp.model;
 
 import com.shopApp.service.transaction.impl.EPaymentStatus;
-import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
 
+import javax.persistence.*;
 import java.util.Date;
 
 @Entity
@@ -13,14 +13,12 @@ import java.util.Date;
 @NoArgsConstructor
 @Getter
 @Table(name = "transaction")
-public class Transaction  {
+public class Transaction extends AuditableCart<Long>  {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id", nullable = false)
     private Long id;
-
-    private Integer quantity = 0;
 
     @Column(name = "total_amount", updatable = false)
     private Long totalAmount = 0L;

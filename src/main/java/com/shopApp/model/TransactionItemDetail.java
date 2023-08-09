@@ -2,9 +2,10 @@ package com.shopApp.model;
 
 import com.fasterxml.jackson.annotation.JsonBackReference;
 import com.shopApp.service.transaction.impl.EProductStatus;
-import jakarta.persistence.*;
 import lombok.Getter;
 import lombok.Setter;
+
+import javax.persistence.*;
 
 @Entity
 @Setter

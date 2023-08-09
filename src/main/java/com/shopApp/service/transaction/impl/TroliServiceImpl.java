@@ -3,6 +3,7 @@ package com.shopApp.service.transaction.impl;
 import com.shopApp.dto.request.TransactionFromTroliRequest;
 import com.shopApp.dto.request.TroliRequest;
 import com.shopApp.dto.response.DefaultResponse;
+import com.shopApp.dto.response.UserDetailsDto;
 import com.shopApp.model.Transaction;
 import com.shopApp.model.TransactionItemDetail;
 import com.shopApp.repository.TransactionItemDetailRepository;
@@ -11,6 +12,8 @@ import com.shopApp.service.TroliService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
@@ -25,6 +28,8 @@ public class TroliServiceImpl implements TroliService {
     TransactionRepository transactionRepository;
     @Override
     public ResponseEntity<?> addTroli(TroliRequest request) {
+        Authentication getAuthentication = SecurityContextHolder.getContext().getAuthentication();
+        UserDetailsDto profile = (UserDetailsDto) getAuthentication.getPrincipal();
 
         TransactionItemDetail transactionItemDetail= transactionItemDetailRepository.findByProductIdWhereStatusTroli(request.getProductId(),EProductStatus.TROLI);
 
@@ -80,7 +85,6 @@ public class TroliServiceImpl implements TroliService {
     }
     @Override
     public ResponseEntity<?> checkoutProductInCart(List<TransactionFromTroliRequest> request) {
-
         try {
             Transaction transaction = new Transaction();
             transaction.setPaymentStatus(EPaymentStatus.PENDING);
@@ -92,8 +96,9 @@ public class TroliServiceImpl implements TroliService {
                 totalAmount += transactionItemDetails.getTotalPrice();
                 transactionItemDetails.setTransaction(transaction);
                 itemDetails.add(transactionItemDetails);
-
             }
+            Date currentDate = new Date();
+            transaction.setExpiredAt( new Date(currentDate.getTime()  + 45 * 60000 ));
             transaction.setTotalAmount(totalAmount);
             transactionRepository.save(transaction);
             transactionItemDetailRepository.saveAll(itemDetails);
@@ -116,8 +121,10 @@ public class TroliServiceImpl implements TroliService {
     }
 
     public ResponseEntity<?> listCart() {
+        Authentication getAuthentication = SecurityContextHolder.getContext().getAuthentication();
+        UserDetailsDto profile = (UserDetailsDto) getAuthentication.getPrincipal();
         try {
-            List<TransactionItemDetail> transactionItemDetails = transactionItemDetailRepository.findAllByidWhereTypetransaction(EProductStatus.TROLI);
+            List<TransactionItemDetail> transactionItemDetails = transactionItemDetailRepository.findAllByidWhereTypetransaction(EProductStatus.TROLI,profile.getId());
             return new ResponseEntity<>(
                     DefaultResponse.builder()
                             .statusCode(200)

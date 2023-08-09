@@ -1,9 +1,6 @@
 package com.shopApp.dto.request;
 
 import com.shopApp.service.transaction.impl.EProductStatus;
-import jakarta.persistence.Column;
-import jakarta.persistence.EnumType;
-import jakarta.persistence.Enumerated;
 import lombok.Getter;
 import lombok.Setter;
 
