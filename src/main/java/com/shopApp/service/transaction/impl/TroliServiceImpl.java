@@ -4,6 +4,7 @@ import com.shopApp.dto.request.TransactionFromTroliRequest;
 import com.shopApp.dto.request.TroliRequest;
 import com.shopApp.dto.response.DefaultResponse;
 import com.shopApp.dto.response.UserDetailsDto;
+import com.shopApp.helper.PublishersRebbitMq;
 import com.shopApp.model.Transaction;
 import com.shopApp.model.TransactionItemDetail;
 import com.shopApp.repository.TransactionItemDetailRepository;
@@ -17,6 +18,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 public class TroliServiceImpl implements TroliService {
@@ -26,6 +28,12 @@ public class TroliServiceImpl implements TroliService {
 
     @Autowired
     TransactionRepository transactionRepository;
+    private PublishersRebbitMq publishersRebbitMq;
+
+    public TroliServiceImpl(PublishersRebbitMq publishersRebbitMq) {
+        this.publishersRebbitMq = publishersRebbitMq;
+    }
+
     @Override
     public ResponseEntity<?> addTroli(TroliRequest request) {
         Authentication getAuthentication = SecurityContextHolder.getContext().getAuthentication();
@@ -104,10 +112,12 @@ public class TroliServiceImpl implements TroliService {
             transactionItemDetailRepository.saveAll(itemDetails);
 
             Map<String,Object> mapResponse = new HashMap<>();
+            mapResponse.put("product",request.stream().collect(Collectors.toList()));
+            mapResponse.put("id",transaction.getId());
+            mapResponse.put("expiredAt",transaction.getExpiredAt());
             mapResponse.put("mess","transaksi berhasil dibuat");
-            mapResponse.put("product",request.stream().toList());
-            mapResponse.put("price",totalAmount);
             mapResponse.put("status",EPaymentStatus.PENDING);
+            publishersRebbitMq.sendOrder(mapResponse);
             return new ResponseEntity<>(
                     DefaultResponse.builder()
                             .statusCode(200)
@@ -129,7 +139,7 @@ public class TroliServiceImpl implements TroliService {
                     DefaultResponse.builder()
                             .statusCode(200)
                             .message("Success")
-                            .data(transactionItemDetails.stream().toList())
+                            .data(transactionItemDetails.stream().collect(Collectors.toList()))
                             .build(),
                     HttpStatus.OK);
         } catch (Exception e) {

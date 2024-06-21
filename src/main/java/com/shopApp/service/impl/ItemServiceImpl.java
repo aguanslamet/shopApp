@@ -2,9 +2,12 @@ package com.shopApp.service.impl;
 
 import com.shopApp.dto.request.ItemPostRequest;
 import com.shopApp.dto.response.DefaultResponse;
+import com.shopApp.helper.PublishersRebbitMq;
 import com.shopApp.model.Items;
+import com.shopApp.model.OrderList;
 import com.shopApp.model.Transaction;
 import com.shopApp.repository.ItemRepository;
+import com.shopApp.repository.OrderListRepository;
 import com.shopApp.repository.TransactionRepository;
 import com.shopApp.service.ItemService;
 import com.shopApp.service.transaction.impl.EPaymentStatus;
@@ -17,6 +20,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
 
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
 
 @Service
 public class ItemServiceImpl implements ItemService {
@@ -26,6 +31,14 @@ public class ItemServiceImpl implements ItemService {
 
     @Autowired
     TransactionRepository transactionRepository;
+    private PublishersRebbitMq publishersRebbitMq;
+    @Autowired
+    private OrderListRepository orderListRepository;
+
+    public ItemServiceImpl(PublishersRebbitMq publishersRebbitMq) {
+        this.publishersRebbitMq = publishersRebbitMq;
+    }
+
     @Override
     public ResponseEntity<?> addItem(ItemPostRequest request) {
         try {
@@ -72,27 +85,24 @@ public class ItemServiceImpl implements ItemService {
             throw new IllegalArgumentException("error");
         }
     }
-
     @Override
     public ResponseEntity<?> simulatorPay(Long transactionId) {
-        Transaction transaction = transactionRepository.getById(transactionId);
-        Date dt = new Date();
-        if (dt.compareTo(transaction.getExpiredAt())>0){
-            transaction.setPaymentStatus(EPaymentStatus.EXPIRED);
-            transactionRepository.save(transaction);
+        OrderList transaction = orderListRepository.findTopByTransactionIdOrderByIdDesc(transactionId);
+            Date dt = new Date();
+            if (dt.compareTo(transaction.getExpiredAt()) > 0) {
+                return new ResponseEntity<>(
+                        DefaultResponse.builder()
+                                .statusCode(200)
+                                .message("Waktu Tunggu Pembayaran sudah habis")
+                                .build(),
+                        HttpStatus.OK);
+            } else {
+                Map data = new HashMap();
+                data.put("id", transaction.getTransactionId());
+                data.put("status_transaction", EPaymentStatus.PAID);
+                publishersRebbitMq.sendResult(data);
+            }
             return new ResponseEntity<>(
-                    DefaultResponse.builder()
-                            .statusCode(200)
-                            .message("Waktu Tunggu Pembayaran sudah habis")
-                            .build(),
-                    HttpStatus.OK);
-        } else{
-            transaction.setPaymentStatus(EPaymentStatus.PAID);
-            transaction.setPaidAt(dt);
-            transactionRepository.save(transaction);
-        }
-
-        return new ResponseEntity<>(
                 DefaultResponse.builder()
                         .statusCode(200)
                         .message("Pembayaran Berhasil Dilakukan")

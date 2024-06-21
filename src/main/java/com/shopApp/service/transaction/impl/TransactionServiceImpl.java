@@ -3,8 +3,10 @@ package com.shopApp.service.transaction.impl;
 import com.shopApp.dto.request.ItemPostRequest;
 import com.shopApp.dto.request.TroliRequest;
 import com.shopApp.dto.response.DefaultResponse;
+import com.shopApp.helper.PublishersRebbitMq;
 import com.shopApp.model.Transaction;
 import com.shopApp.model.TransactionItemDetail;
+import com.shopApp.repository.OrderListRepository;
 import com.shopApp.repository.TransactionItemDetailRepository;
 import com.shopApp.repository.TransactionRepository;
 import com.shopApp.service.TroliService;
@@ -29,6 +31,11 @@ public class TransactionServiceImpl implements TransactionService {
 
     @Autowired
     TransactionRepository transactionRepository;
+    private PublishersRebbitMq publishersRebbitMq;
+
+    public TransactionServiceImpl(PublishersRebbitMq publishersRebbitMq) {
+        this.publishersRebbitMq = publishersRebbitMq;
+    }
 
     @Override
     public ResponseEntity<?> checkOutInListItemProduct(ItemPostRequest request) {
@@ -46,15 +53,17 @@ public class TransactionServiceImpl implements TransactionService {
             transactionItemDetail.setBasePrice(request.getPrice());
             transactionItemDetail.setTotalPrice(request.getPrice());
             transactionItemDetail.setQuantity(1L);
-           transactionRepository.save(transaction);
+            transactionRepository.save(transaction);
             transactionItemDetailRepository.save(transactionItemDetail);
 
-
             Map<String,Object> mapResponse = new HashMap<>();
+            mapResponse.put("id",transaction.getId());
+            mapResponse.put("expiredAt",transaction.getExpiredAt());
             mapResponse.put("mess","transaksi berhasil dibuat");
             mapResponse.put("product",request);
             mapResponse.put("price",request.getPrice());
             mapResponse.put("status",EPaymentStatus.PENDING);
+            publishersRebbitMq.sendOrder(mapResponse);
             return new ResponseEntity<>(
                     DefaultResponse.builder()
                             .statusCode(200)
@@ -66,6 +75,22 @@ public class TransactionServiceImpl implements TransactionService {
         }catch (Exception e){
             throw new IllegalArgumentException("error");
         }
+    }
+    public ResponseEntity<?> cellbackService(Map data) {
+        Number id = (Number) data.get("id");
+        Transaction transaction = transactionRepository.getFindById(id.longValue());
+        Date dt = new Date();
+            transaction.setPaymentStatus(EPaymentStatus.PAID);
+            transaction.setPaidAt(dt);
+            transactionRepository.save(transaction);
+        data.put("id",transaction.getId());
+        data.put("status_transaction",transaction.getPaymentStatus());
+        return new ResponseEntity<>(
+                DefaultResponse.builder()
+                        .statusCode(200)
+                        .message("Pembayaran Berhasil Dilakukan")
+                        .build(),
+                HttpStatus.OK);
     }
 
 }

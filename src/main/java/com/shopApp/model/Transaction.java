@@ -14,7 +14,7 @@ import java.util.Date;
 @Getter
 @Table(name = "transaction")
 public class Transaction extends AuditableCart<Long>  {
-
+    private static final long serialVersionUID = 1L;
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "id", nullable = false)
