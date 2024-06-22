@@ -1,26 +1,20 @@
 package com.shopApp.service.transaction.impl;
 
 import com.shopApp.dto.request.ItemPostRequest;
-import com.shopApp.dto.request.TroliRequest;
 import com.shopApp.dto.response.DefaultResponse;
-import com.shopApp.helper.PublishersRebbitMq;
+import com.shopApp.helper.ProducerRebbitMq;
 import com.shopApp.model.Transaction;
 import com.shopApp.model.TransactionItemDetail;
-import com.shopApp.repository.OrderListRepository;
 import com.shopApp.repository.TransactionItemDetailRepository;
 import com.shopApp.repository.TransactionRepository;
-import com.shopApp.service.TroliService;
 import com.shopApp.service.transaction.TransactionService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
 
 import java.util.Date;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
 
 @Service
@@ -31,10 +25,10 @@ public class TransactionServiceImpl implements TransactionService {
 
     @Autowired
     TransactionRepository transactionRepository;
-    private PublishersRebbitMq publishersRebbitMq;
+    private ProducerRebbitMq producerRebbitMq;
 
-    public TransactionServiceImpl(PublishersRebbitMq publishersRebbitMq) {
-        this.publishersRebbitMq = publishersRebbitMq;
+    public TransactionServiceImpl(ProducerRebbitMq producerRebbitMq) {
+        this.producerRebbitMq = producerRebbitMq;
     }
 
     @Override
@@ -63,7 +57,7 @@ public class TransactionServiceImpl implements TransactionService {
             mapResponse.put("product",request);
             mapResponse.put("price",request.getPrice());
             mapResponse.put("status",EPaymentStatus.PENDING);
-            publishersRebbitMq.sendOrder(mapResponse);
+            producerRebbitMq.sendOrder(mapResponse);
             return new ResponseEntity<>(
                     DefaultResponse.builder()
                             .statusCode(200)

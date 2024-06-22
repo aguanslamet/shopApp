@@ -2,10 +2,9 @@ package com.shopApp.service.impl;
 
 import com.shopApp.dto.request.ItemPostRequest;
 import com.shopApp.dto.response.DefaultResponse;
-import com.shopApp.helper.PublishersRebbitMq;
+import com.shopApp.helper.ProducerRebbitMq;
 import com.shopApp.model.Items;
 import com.shopApp.model.OrderList;
-import com.shopApp.model.Transaction;
 import com.shopApp.repository.ItemRepository;
 import com.shopApp.repository.OrderListRepository;
 import com.shopApp.repository.TransactionRepository;
@@ -31,12 +30,12 @@ public class ItemServiceImpl implements ItemService {
 
     @Autowired
     TransactionRepository transactionRepository;
-    private PublishersRebbitMq publishersRebbitMq;
+    private ProducerRebbitMq producerRebbitMq;
     @Autowired
     private OrderListRepository orderListRepository;
 
-    public ItemServiceImpl(PublishersRebbitMq publishersRebbitMq) {
-        this.publishersRebbitMq = publishersRebbitMq;
+    public ItemServiceImpl(ProducerRebbitMq producerRebbitMq) {
+        this.producerRebbitMq = producerRebbitMq;
     }
 
     @Override
@@ -100,7 +99,7 @@ public class ItemServiceImpl implements ItemService {
                 Map data = new HashMap();
                 data.put("id", transaction.getTransactionId());
                 data.put("status_transaction", EPaymentStatus.PAID);
-                publishersRebbitMq.sendResult(data);
+                producerRebbitMq.sendResult(data);
             }
             return new ResponseEntity<>(
                 DefaultResponse.builder()

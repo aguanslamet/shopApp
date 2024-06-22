@@ -4,7 +4,8 @@ import com.shopApp.dto.request.TransactionFromTroliRequest;
 import com.shopApp.dto.request.TroliRequest;
 import com.shopApp.dto.response.DefaultResponse;
 import com.shopApp.dto.response.UserDetailsDto;
-import com.shopApp.helper.PublishersRebbitMq;
+import com.shopApp.helper.ProducerKafka;
+import com.shopApp.helper.ProducerRebbitMq;
 import com.shopApp.model.Transaction;
 import com.shopApp.model.TransactionItemDetail;
 import com.shopApp.repository.TransactionItemDetailRepository;
@@ -28,10 +29,9 @@ public class TroliServiceImpl implements TroliService {
 
     @Autowired
     TransactionRepository transactionRepository;
-    private PublishersRebbitMq publishersRebbitMq;
-
-    public TroliServiceImpl(PublishersRebbitMq publishersRebbitMq) {
-        this.publishersRebbitMq = publishersRebbitMq;
+    private ProducerKafka producerKafka;
+    public TroliServiceImpl(ProducerKafka producerKafka) {
+        this.producerKafka = producerKafka;
     }
 
     @Override
@@ -117,7 +117,7 @@ public class TroliServiceImpl implements TroliService {
             mapResponse.put("expiredAt",transaction.getExpiredAt());
             mapResponse.put("mess","transaksi berhasil dibuat");
             mapResponse.put("status",EPaymentStatus.PENDING);
-            publishersRebbitMq.sendOrder(mapResponse);
+            producerKafka.sendOrder(mapResponse);
             return new ResponseEntity<>(
                     DefaultResponse.builder()
                             .statusCode(200)
